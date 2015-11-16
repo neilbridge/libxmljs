@@ -11,7 +11,7 @@
   "scripts": {
     "prepublish": "grep -v xmlversion.h vendor/libxml/.gitignore > vendor/libxml/.npmignore && cp vendor/libxml.conf/include/libxml/xmlversion.h vendor/libxml/include/libxml/",
     "postpublish": "rm vendor/libxml/.npmignore vendor/libxml/include/libxml/xmlversion.h",
-    "test": "node --expose_gc ./node_modules/.bin/nodeunit test"
+    "test": "node --expose_gc node_modules/nodeunit/bin/nodeunit test"
   },
   "repository": {
     "type": "git",

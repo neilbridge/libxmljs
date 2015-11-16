@@ -10,6 +10,7 @@ node_js:
     - iojs-2
     - iojs-3
     - 4
+    - 5
 
 addons:
     apt:
