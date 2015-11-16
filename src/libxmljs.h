@@ -6,6 +6,16 @@
 #include <node.h>
 #include "nan.h"
 
+#if defined(_WIN32) && defined(_MSC_VER)
+  #if defined(IN_LIBXMLJS)
+    #define LIBXMLJS_API __declspec(dllexport)
+  #else
+    #define LIBXMLJS_API __declspec(dllimport)
+  #endif
+#else
+  #define LIBXMLJS_API
+#endif
+
 #define LIBXMLJS_ARGUMENT_TYPE_CHECK(arg, type, err)                          \
   if (!arg->type()) {                                                         \
     return Nan::ThrowTypeError(err);                                            \
@@ -33,7 +43,7 @@ private:
 // and be kept alive during the execution of a worker thread,
 // to be eventually destroyed on the main V8 thread again.
 // Only a single worker is allowed per parent.
-class WorkerParent {
+class LIBXMLJS_API WorkerParent {
 public:
     WorkerParent();
     virtual ~WorkerParent();
@@ -45,7 +55,7 @@ private:
 // An object of the following class must be created in the worker thread,
 // and kept alive as long as the worker interfaces with libxmljs.
 // It must eventually be destroyed while still in the worker thread.
-class WorkerSentinel {
+class LIBXMLJS_API WorkerSentinel {
 public:
     WorkerSentinel(WorkerParent& parent);
     virtual ~WorkerSentinel();

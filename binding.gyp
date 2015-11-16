@@ -29,6 +29,11 @@
               '-undefined dynamic_lookup'
             ],
           },
+        },
+         'OS=="win"', {
+         'defines': [
+           'IN_LIBXMLJS'
+         ]
         }]
       ]
     }
