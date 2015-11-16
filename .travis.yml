@@ -9,6 +9,7 @@ node_js:
     - iojs-1
     - iojs-2
     - iojs-3
+    - 4
 
 addons:
     apt:
@@ -21,4 +22,4 @@ sudo: false
 
 before_install:
     - $CXX --version
-    - case ${TRAVIS_NODE_VERSION} in 0.8*|0.10*) npm update -g npm ;; esac
+    - case ${TRAVIS_NODE_VERSION} in 0.8*|0.10*) npm install -g npm@2 ;; esac
