@@ -85,11 +85,11 @@ module.exports.parse_async = function(assert) {
     var filename = __dirname + '/fixtures/parser.xml';
     fs.readFile(filename, 'utf8', step2);
     function step2(err, str) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         libxml.Document.fromXmlAsync(str, step3);
     }
     function step3(err, doc) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         assert.equal('1.0', doc.version());
         assert.equal('UTF-8', doc.encoding());
         assert.equal('root', doc.root().name());
@@ -102,11 +102,11 @@ module.exports.parse_buffer_async = function(assert) {
     var filename = __dirname + '/fixtures/parser-utf16.xml';
     fs.readFile(filename, step2);
     function step2(err, buf) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         libxml.Document.fromXmlAsync(buf, step3);
     }
     function step3(err, doc) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         assert.equal('1.0', doc.version());
         assert.equal('UTF-16', doc.encoding());
         assert.equal('root', doc.root().name());
@@ -119,11 +119,11 @@ module.exports.recoverable_parse_async = function(assert) {
     var filename = __dirname + '/fixtures/warnings/ent9.xml';
     fs.readFile(filename, 'utf8', step2);
     function step2(err, str) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         libxml.Document.fromXmlAsync(str, step3);
     }
     function step3(err, doc) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         assert.equal(1, doc.errors.length);
         err = doc.errors.shift();
         assert.ok(err instanceof Error);
@@ -136,7 +136,7 @@ module.exports.fatal_error_async = function(assert) {
     var filename = __dirname + '/fixtures/errors/comment.xml';
     fs.readFile(filename, 'utf8', step2);
     function step2(err, str) {
-        assert.strictEqual(err, null);
+        assert.ifError(err);
         libxml.Document.fromXmlAsync(str, step3);
     }
     function step3(err, doc) {
