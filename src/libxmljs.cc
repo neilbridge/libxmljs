@@ -19,6 +19,7 @@ bool tlsInitialized = false;
 Nan::nauv_key_t tlsKey;
 bool isAsync = false; // Only set on V8 thread when no workers are running
 int numWorkers = 0; // Only access from V8 thread
+ssize_t memSize = 0; // Mainly for testing
 
 struct memHdr {
     size_t size;
@@ -33,6 +34,12 @@ inline void* hdr2client(memHdr* hdr) {
 
 inline memHdr* client2hdr(void* client) {
     return reinterpret_cast<memHdr*>(static_cast<char*>(client) - HDR_SIZE);
+}
+
+inline void actuallyAdjustMem(ssize_t diff)
+{
+    memSize += diff;
+    Nan::AdjustExternalMemory(diff);
 }
 
 void adjustMem(ssize_t diff)
@@ -64,7 +71,7 @@ void adjustMem(ssize_t diff)
         assert(diff <= 0);
         return;
     }
-    Nan::AdjustExternalMemory(diff);
+    actuallyAdjustMem(diff);
 }
 
 void* memMalloc(size_t size)
@@ -119,7 +126,7 @@ WorkerParent::WorkerParent() : memAdjustments(0) {
 
 // Tear down in V8 thread
 WorkerParent::~WorkerParent() {
-    Nan::AdjustExternalMemory(memAdjustments);
+    actuallyAdjustMem(memAdjustments);
     if (--numWorkers == 0)
     {
         isAsync = false;
@@ -268,7 +275,7 @@ v8::Local<v8::Object> listFeatures() {
 NAN_METHOD(XmlMemUsed)
 {
   Nan::HandleScope scope;
-  return info.GetReturnValue().Set(Nan::New<v8::Int32>(xmlMemUsed()));
+  return info.GetReturnValue().Set(Nan::New<v8::Int32>(int32_t(memSize)));
 }
 
 NAN_METHOD(XmlNodeCount)
