@@ -14,3 +14,9 @@ module.exports.threading = function(assert) {
     assert.equal(libxml.features.THREAD, true);
     assert.done();
 };
+
+module.exports.memoryUsage = function(assert) {
+    assert.ok(typeof libxml.memoryUsage() === 'number');
+    assert.done();
+};
+

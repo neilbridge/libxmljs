@@ -63,6 +63,12 @@ module.exports.version = function(assert) {
     assert.done();
 };
 
+module.exports.type = function(assert) {
+    var doc = libxml.Document('2.0');
+    assert.equal('document', doc.type());
+    assert.done();
+};
+
 module.exports.full = function(assert) {
     var doc = libxml.Document('2.0', 'UTF-8');
     assert.ok(doc);
@@ -325,15 +331,88 @@ module.exports.validate_memory_usage = function(assert) {
     var xsdDoc = libxml.parseXml(xsd);
     var xmlDoc = libxml.parseXml(xml);
 
-    var initialMemory = process.memoryUsage();
-
+    var rssBefore = rssAfterGarbageCollection();
     for (var i = 0; i < 10000; ++i) {
         xmlDoc.validate(xsdDoc);
     }
-
-    global.gc();
-
-    var maxRssDelta = /^v0\.8/.test(process.version) ? (initialMemory.rss / 2) : 2000000;
-    assert.ok(process.memoryUsage().rss - initialMemory.rss < maxRssDelta);
+    assert.ok((rssAfterGarbageCollection() - rssBefore) < VALIDATE_RSS_TOLERANCE);
     assert.done();
 };
+
+module.exports.fromHtml = function(assert) {
+    var html = "<p>A paragraph with <span>inline tags</span></p>";
+    var header = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">\n<html><body>';
+    var footer = "</body></html>\n";
+    var parsedHtml = libxml.Document.fromHtml(html);
+    assert.equal(header + html + footer, parsedHtml.toString());
+    assert.done();
+};
+
+module.exports.fromHtmlFragment = function(assert) {
+    var html = "<p>A paragraph with <span>inline tags</span></p>";
+    var parsedHtml = libxml.Document.fromHtmlFragment(html);
+
+    assert.equal(html + "\n", parsedHtml.toString());
+    assert.done();
+
+};
+
+module.exports.validate_rng_memory_usage = function(assert) {
+  var rng =
+    '<element name="addressBook" xmlns="http://relaxng.org/ns/structure/1.0">'+
+      '<zeroOrMore>'+
+        '<element name="card">'+
+          '<element name="name">'+
+            '<text/>'+
+          '</element>'+
+          '<element name="email">'+
+            '<text/>'+
+          '</element>'+
+        '</element>'+
+      '</zeroOrMore>'+
+    '</element>';
+
+  var xml_valid =
+    '<addressBook>'+
+      '<card>'+
+        '<name>John Smith</name>'+
+        '<email>js@example.com</email>'+
+      '</card>'+
+      '<card>'+
+        '<name>Fred Bloggs</name>'+
+        '<email>fb@example.net</email>'+
+      '</card>'+
+    '</addressBook>';
+
+    var rngDoc = libxml.parseXml(rng);
+    var xmlDoc = libxml.parseXml(xml_valid);
+
+    var rssBefore = rssAfterGarbageCollection();
+    for (var i = 0; i < 10000; ++i) {
+        xmlDoc.rngValidate(rngDoc);
+    }
+    assert.ok((rssAfterGarbageCollection() - rssBefore) < VALIDATE_RSS_TOLERANCE);
+    assert.done();
+};
+
+var VALIDATE_RSS_TOLERANCE = 100000;
+
+function rssAfterGarbageCollection(maxCycles) {
+    maxCycles || (maxCycles = 10);
+
+    var rss = process.memoryUsage().rss;
+    var freedMemory = 0;
+    do {
+        global.gc();
+
+        var rssAfterGc = process.memoryUsage().rss;
+        freedMemory = rss - rssAfterGc;
+        rss = rssAfterGc;
+
+        maxCycles--;
+    }
+    while ((freedMemory !== 0) && (maxCycles > 0));
+
+    return rss;
+}
+

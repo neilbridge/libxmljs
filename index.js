@@ -11,6 +11,7 @@ module.exports.parseXml = Document.fromXml;
 
 /// parse an html string and return a Document
 module.exports.parseHtml = Document.fromHtml;
+module.exports.parseHtmlFragment = Document.fromHtmlFragment;
 
 // constants
 module.exports.version = require('./package.json').version;
@@ -20,13 +21,14 @@ module.exports.libxml_debug_enabled = bindings.libxml_debug_enabled;
 module.exports.features = bindings.features;
 
 // lib exports
+module.exports.Comment = require('./lib/comment');
 module.exports.Document = Document;
 module.exports.Element = require('./lib/element');
-module.exports.Comment = require('./lib/comment');
+module.exports.Text = require('./lib/text');
 
 // Compatibility synonyms
 Document.fromXmlString = Document.fromXml;
-Document.fromHtmlString = Document.fromHtmlString;
+Document.fromHtmlString = Document.fromHtml;
 module.exports.parseXmlString = module.exports.parseXml;
 module.exports.parseHtmlString = module.exports.parseHtml;
 
@@ -34,3 +36,6 @@ var sax_parser = require('./lib/sax_parser');
 module.exports.SaxParser = sax_parser.SaxParser;
 module.exports.SaxPushParser = sax_parser.SaxPushParser;
 
+module.exports.memoryUsage = bindings.xmlMemUsed;
+
+module.exports.nodeCount = bindings.xmlNodeCount;

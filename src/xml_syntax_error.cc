@@ -8,6 +8,7 @@ namespace {
 
 void set_string_field(v8::Local<v8::Object> obj,
         const char* name, const char* value) {
+    Nan::HandleScope scope;
     if (!value) {
         return;
     }
@@ -16,6 +17,7 @@ void set_string_field(v8::Local<v8::Object> obj,
 
 void set_numeric_field(v8::Local<v8::Object> obj,
         const char* name, const int value) {
+    Nan::HandleScope scope;
     Nan::Set(obj, Nan::New<v8::String>(name).ToLocalChecked(), Nan::New<v8::Int32>(value));
 }
 
@@ -35,6 +37,8 @@ XmlSyntaxErrorsSync::~XmlSyntaxErrorsSync() {
 
 v8::Local<v8::Value>
 XmlSyntaxErrorsSync::BuildSyntaxError(xmlError* error) {
+    Nan::EscapableHandleScope scope;
+
     v8::Local<v8::Value> err = v8::Exception::Error(
             Nan::New<v8::String>(error->message).ToLocalChecked());
     v8::Local<v8::Object> out = v8::Local<v8::Object>::Cast(err);
@@ -54,11 +58,12 @@ XmlSyntaxErrorsSync::BuildSyntaxError(xmlError* error) {
     if (error->int1) {
         set_numeric_field(out, "int1", error->int1);
     }
-    return err;
+    return scope.Escape(err);
 }
 
 void
 XmlSyntaxErrorsSync::ErrorFunc(void* errs, xmlError* error) {
+    Nan::HandleScope scope;
     XmlSyntaxErrorsSync* self = static_cast<XmlSyntaxErrorsSync*>(errs);
     self->errors->Set(self->errors->Length(), BuildSyntaxError(error));
 }
@@ -71,10 +76,11 @@ XmlSyntaxErrorsStore::~XmlSyntaxErrorsStore() {
 
 v8::Local<v8::Array>
 XmlSyntaxErrorsStore::ToArray() {
+    Nan::EscapableHandleScope scope;
     v8::Local<v8::Array> array = Nan::New<v8::Array>(errors.size());
     for (uint32_t i = 0; i != errors.size(); ++i)
         array->Set(i, XmlSyntaxErrorsSync::BuildSyntaxError(errors[i]));
-    return array;
+    return scope.Escape(array);
 }
 
 void

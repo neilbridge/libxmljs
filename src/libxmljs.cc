@@ -8,8 +8,12 @@
 #include "xml_document.h"
 #include "xml_node.h"
 #include "xml_sax_parser.h"
+#include "xml_namespace.h"
 
 namespace libxmljs {
+
+// track how many nodes haven't been freed
+int nodeCount = 0;
 
 bool tlsInitialized = false;
 Nan::nauv_key_t tlsKey;
@@ -133,20 +137,66 @@ WorkerSentinel::~WorkerSentinel() {
     Nan::nauv_key_set(&tlsKey, NULL);
 }
 
-// callback function for `xmlDeregisterNodeDefault`
+void deregisterNsList(xmlNs* ns)
+{
+    while (ns != NULL) {
+        if (ns->_private != NULL) {
+            XmlNamespace* wrapper = static_cast<XmlNamespace*>(ns->_private);
+            wrapper->xml_obj = NULL;
+            ns->_private = NULL;
+        }
+        ns = ns->next;
+    }
+}
+
+void deregisterNodeNamespaces(xmlNode* xml_obj)
+{
+    xmlNs* ns = NULL;
+    if ((xml_obj->type == XML_DOCUMENT_NODE) ||
+#ifdef LIBXML_DOCB_ENABLED
+        (xml_obj->type == XML_DOCB_DOCUMENT_NODE) ||
+#endif
+        (xml_obj->type == XML_HTML_DOCUMENT_NODE)) {
+        ns = reinterpret_cast<xmlDoc*>(xml_obj)->oldNs;
+    }
+    else if ((xml_obj->type == XML_ELEMENT_NODE) ||
+             (xml_obj->type == XML_XINCLUDE_START) ||
+             (xml_obj->type == XML_XINCLUDE_END)) {
+        ns = xml_obj->nsDef;
+    }
+    if (ns != NULL) {
+        deregisterNsList(ns);
+    }
+}
+
+/*
+ * Before libxmljs nodes are freed, they are passed to the deregistration
+ * callback, (configured by `xmlDeregisterNodeDefault`).
+ *
+ * In deregistering each node, we update any wrapper (e.g. `XmlElement`,
+ * `XmlAttribute`) to ensure that when it is destroyed, it doesn't try to
+ * access the freed memory.
+ *
+ * Because namespaces (`xmlNs`) attached to nodes are also freed and may be
+ * wrapped, it is necessary to update any wrappers (`XmlNamespace`) which have
+ * been created for attached namespaces.
+ */
 void xmlDeregisterNodeCallback(xmlNode* xml_obj)
 {
-    if (xml_obj->_private)
+    nodeCount--;
+    deregisterNodeNamespaces(xml_obj);
+    if (xml_obj->_private != NULL)
     {
-        XmlNode* node = static_cast<XmlNode*>(xml_obj->_private);
-
-        // flag the XmlNode object as freed
-        node->freed = true;
-
-        // save a reference to the doc so we can still `unref` it
-        node->doc = xml_obj->doc;
+        static_cast<XmlNode*>(xml_obj->_private)->xml_obj = NULL;
+        xml_obj->_private = NULL;
     }
     return;
+}
+
+// this is called for any created nodes
+void xmlRegisterNodeCallback(xmlNode* xml_obj)
+{
+    nodeCount++;
 }
 
 // ensure destruction at exit time
@@ -155,6 +205,9 @@ LibXMLJS LibXMLJS::instance;
 
 LibXMLJS::LibXMLJS()
 {
+    // set the callback for when a node is created
+    xmlRegisterNodeDefault(xmlRegisterNodeCallback);
+
     // set the callback for when a node is about to be freed
     xmlDeregisterNodeDefault(xmlDeregisterNodeCallback);
 
@@ -171,6 +224,7 @@ LibXMLJS::~LibXMLJS()
 }
 
 v8::Local<v8::Object> listFeatures() {
+    Nan::EscapableHandleScope scope;
     v8::Local<v8::Object> target = Nan::New<v8::Object>();
 #define FEAT(x) Nan::Set(target, Nan::New<v8::String>(# x).ToLocalChecked(), \
                     Nan::New<v8::Boolean>(xmlHasFeature(XML_WITH_ ## x)))
@@ -208,7 +262,19 @@ v8::Local<v8::Object> listFeatures() {
     FEAT(ZLIB);
     FEAT(ICU);
     FEAT(LZMA);
-    return target;
+    return scope.Escape(target);
+}
+
+NAN_METHOD(XmlMemUsed)
+{
+  Nan::HandleScope scope;
+  return info.GetReturnValue().Set(Nan::New<v8::Int32>(xmlMemUsed()));
+}
+
+NAN_METHOD(XmlNodeCount)
+{
+  Nan::HandleScope scope;
+  return info.GetReturnValue().Set(Nan::New<v8::Int32>(nodeCount));
 }
 
 NAN_MODULE_INIT(init)
@@ -230,6 +296,10 @@ NAN_MODULE_INIT(init)
       Nan::Set(target, Nan::New<v8::String>("features").ToLocalChecked(), listFeatures());
 
       Nan::Set(target, Nan::New<v8::String>("libxml").ToLocalChecked(), target);
+
+      Nan::SetMethod(target, "xmlMemUsed", XmlMemUsed);
+
+      Nan::SetMethod(target, "xmlNodeCount", XmlNodeCount);
 }
 
 NODE_MODULE(xmljs, init)

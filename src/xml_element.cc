@@ -38,13 +38,13 @@ NAN_METHOD(XmlElement::New) {
   v8::String::Utf8Value contentRaw(contentOpt);
   const char* content = (contentRaw.length()) ? *contentRaw : NULL;
 
-  xmlChar* encoded = content ? xmlEncodeSpecialChars(document->xml_obj, (const xmlChar*)content) : NULL;
+  xmlChar* encodedContent = content ? xmlEncodeSpecialChars(document->xml_obj, (const xmlChar*)content) : NULL;
   xmlNode* elem = xmlNewDocNode(document->xml_obj,
                                 NULL,
-                                (const xmlChar*)*name,
-                                encoded);
-  if (encoded)
-      xmlFree(encoded);
+                                (const xmlChar*) *name,
+                                encodedContent);
+  if (encodedContent)
+      xmlFree(encodedContent);
 
   XmlElement* element = new XmlElement(elem);
   elem->_private = element;
@@ -98,20 +98,29 @@ NAN_METHOD(XmlElement::Attrs) {
 }
 
 NAN_METHOD(XmlElement::AddChild) {
-  Nan::HandleScope scope;
   XmlElement* element = Nan::ObjectWrap::Unwrap<XmlElement>(info.Holder());
   assert(element);
 
-  XmlElement* child = Nan::ObjectWrap::Unwrap<XmlElement>(info[0]->ToObject());
+  XmlNode* child = Nan::ObjectWrap::Unwrap<XmlNode>(info[0]->ToObject());
   assert(child);
 
-  child = element->import_element(child);
-
-  if(child == NULL) {
+  xmlNode *imported_child = element->import_node(child->xml_obj);
+  if (imported_child == NULL) {
       return Nan::ThrowError("Could not add child. Failed to copy node to new Document.");
   }
 
-  element->add_child(child);
+  bool will_merge = element->child_will_merge(imported_child);
+  if ((child->xml_obj == imported_child) && will_merge) {
+      // merged child will be free, so ensure it is a copy
+      imported_child = xmlCopyNode(imported_child, 0);
+  }
+
+  element->add_child(imported_child);
+
+  if (!will_merge && (imported_child->_private != NULL)) {
+      static_cast<XmlNode*>(imported_child->_private)->ref_wrapped_ancestor();
+  }
+
   return info.GetReturnValue().Set(info.Holder());
 }
 
@@ -229,37 +238,56 @@ NAN_METHOD(XmlElement::Path) {
 }
 
 NAN_METHOD(XmlElement::AddPrevSibling) {
-  Nan::HandleScope scope;
   XmlElement* element = Nan::ObjectWrap::Unwrap<XmlElement>(info.Holder());
   assert(element);
 
-  XmlElement* new_sibling = Nan::ObjectWrap::Unwrap<XmlElement>(info[0]->ToObject());
+  XmlNode* new_sibling = Nan::ObjectWrap::Unwrap<XmlNode>(info[0]->ToObject());
   assert(new_sibling);
 
-  new_sibling = element->import_element(new_sibling);
+  xmlNode *imported_sibling = element->import_node(new_sibling->xml_obj);
+  if (imported_sibling == NULL) {
+      return Nan::ThrowError("Could not add sibling. Failed to copy node to new Document.");
+  }
 
-  element->add_prev_sibling(new_sibling);
+  bool will_merge = element->prev_sibling_will_merge(imported_sibling);
+  if ((new_sibling->xml_obj == imported_sibling) && will_merge) {
+      imported_sibling = xmlCopyNode(imported_sibling, 0); // merged sibling is freed, so copy it
+  }
+  element->add_prev_sibling(imported_sibling);
+
+  if (!will_merge && (imported_sibling->_private != NULL)) {
+      static_cast<XmlNode*>(imported_sibling->_private)->ref_wrapped_ancestor();
+  }
 
   return info.GetReturnValue().Set(info[0]);
 }
 
 NAN_METHOD(XmlElement::AddNextSibling) {
-  Nan::HandleScope scope;
   XmlElement* element = Nan::ObjectWrap::Unwrap<XmlElement>(info.Holder());
   assert(element);
 
-  XmlElement* new_sibling = Nan::ObjectWrap::Unwrap<XmlElement>(info[0]->ToObject());
+  XmlNode* new_sibling = Nan::ObjectWrap::Unwrap<XmlNode>(info[0]->ToObject());
   assert(new_sibling);
 
-  new_sibling = element->import_element(new_sibling);
+  xmlNode *imported_sibling = element->import_node(new_sibling->xml_obj);
+  if (imported_sibling == NULL) {
+      return Nan::ThrowError("Could not add sibling. Failed to copy node to new Document.");
+  }
 
-  element->add_next_sibling(new_sibling);
+  bool will_merge = element->next_sibling_will_merge(imported_sibling);
+  if ((new_sibling->xml_obj == imported_sibling) && will_merge) {
+      imported_sibling = xmlCopyNode(imported_sibling, 0);
+  }
+  element->add_next_sibling(imported_sibling);
+
+  if (!will_merge && (imported_sibling->_private != NULL)) {
+      static_cast<XmlNode*>(imported_sibling->_private)->ref_wrapped_ancestor();
+  }
 
   return info.GetReturnValue().Set(info[0]);
 }
 
 NAN_METHOD(XmlElement::Replace) {
-  Nan::HandleScope scope;
   XmlElement* element = Nan::ObjectWrap::Unwrap<XmlElement>(info.Holder());
   assert(element);
 
@@ -269,9 +297,11 @@ NAN_METHOD(XmlElement::Replace) {
     XmlElement* new_sibling = Nan::ObjectWrap::Unwrap<XmlElement>(info[0]->ToObject());
     assert(new_sibling);
 
-    new_sibling = element->import_element(new_sibling);
-
-    element->replace_element(new_sibling);
+    xmlNode *imported_sibling = element->import_node(new_sibling->xml_obj);
+    if (imported_sibling == NULL) {
+        return Nan::ThrowError("Could not replace. Failed to copy node to new Document.");
+    }
+    element->replace_element(imported_sibling);
   }
 
   return info.GetReturnValue().Set(info[0]);
@@ -308,6 +338,7 @@ void
 XmlElement::set_attr(const char* name,
                      const char* value)
 {
+    Nan::HandleScope scope;
     XmlAttribute::New(xml_obj, (const xmlChar*)name, (const xmlChar*)value);
 }
 
@@ -332,21 +363,9 @@ XmlElement::get_attrs() {
 }
 
 void
-XmlElement::add_child(XmlElement* child) {
-  xmlNodePtr node = xmlAddChild(xml_obj, child->xml_obj);
-  if (node != child->xml_obj)
-  {
-    // xmlAddChild deleted child->xml_obj by merging it with xml_obj last child
-    // recreate a valid xml_obj for child to avoid any memory issue
-    child->xml_obj = xmlNewDocText(xml_obj->doc, (const xmlChar*) "");
-  }
-}
-
-void
 XmlElement::add_cdata(xmlNode* cdata) {
   xmlAddChild(xml_obj, cdata);
 }
-
 
 v8::Local<v8::Value>
 XmlElement::get_child(int32_t idx) {
@@ -391,12 +410,13 @@ XmlElement::get_child_nodes() {
 
 v8::Local<v8::Value>
 XmlElement::get_path() {
+  Nan::EscapableHandleScope scope;
   xmlChar* path = xmlGetNodePath(xml_obj);
   const char* return_path = path ? reinterpret_cast<char*>(path) : "";
   int str_len = xmlStrlen((const xmlChar*)return_path);
   v8::Local<v8::String> js_obj = Nan::New<v8::String>(return_path, str_len).ToLocalChecked();
   xmlFree(path);
-  return js_obj;
+  return scope.Escape(js_obj);
 }
 
 void
@@ -408,15 +428,16 @@ XmlElement::set_content(const char* content) {
 
 v8::Local<v8::Value>
 XmlElement::get_content() {
+  Nan::EscapableHandleScope scope;
   xmlChar* content = xmlNodeGetContent(xml_obj);
   if (content) {
     v8::Local<v8::String> ret_content =
       Nan::New<v8::String>((const char *)content).ToLocalChecked();
     xmlFree(content);
-    return ret_content;
+    return scope.Escape(ret_content);
   }
 
-  return Nan::New<v8::String>("").ToLocalChecked();
+  return scope.Escape(Nan::New<v8::String>("").ToLocalChecked());
 }
 
 v8::Local<v8::Value>
@@ -459,14 +480,15 @@ XmlElement::get_prev_element() {
 v8::Local<v8::Object>
 XmlElement::New(xmlNode* node)
 {
+    Nan::EscapableHandleScope scope;
     if (node->_private) {
-        return static_cast<XmlNode*>(node->_private)->handle();
+        return scope.Escape(static_cast<XmlNode*>(node->_private)->handle());
     }
 
     XmlElement* element = new XmlElement(node);
     v8::Local<v8::Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
     element->Wrap(obj);
-    return obj;
+    return scope.Escape(obj);
 }
 
 XmlElement::XmlElement(xmlNode* node)
@@ -475,18 +497,12 @@ XmlElement::XmlElement(xmlNode* node)
 }
 
 void
-XmlElement::add_prev_sibling(XmlElement* element) {
-  xmlAddPrevSibling(xml_obj, element->xml_obj);
-}
-
-void
-XmlElement::add_next_sibling(XmlElement* element) {
-  xmlAddNextSibling(xml_obj, element->xml_obj);
-}
-
-void
-XmlElement::replace_element(XmlElement* element) {
-  xmlReplaceNode(xml_obj, element->xml_obj);
+XmlElement::replace_element(xmlNode* element) {
+  xmlReplaceNode(xml_obj, element);
+  if (element->_private != NULL) {
+      XmlNode* node = static_cast<XmlNode*>(element->_private);
+      node->ref_wrapped_ancestor();
+  }
 }
 
 void
@@ -495,26 +511,31 @@ XmlElement::replace_text(const char* content) {
   xmlReplaceNode(xml_obj, txt);
 }
 
-XmlElement *
-XmlElement::import_element(XmlElement *element) {
+bool
+XmlElement::child_will_merge(xmlNode *child) {
+  return ((child->type == XML_TEXT_NODE)         &&
+          (xml_obj->last != NULL)                &&
+          (xml_obj->last->type == XML_TEXT_NODE) &&
+          (xml_obj->last->name == child->name)   &&
+          (xml_obj->last != child));
+}
 
-    xmlNode* new_child;
+bool
+XmlElement::next_sibling_will_merge(xmlNode *child) {
+  return ((child->type == XML_TEXT_NODE) &&
+          ((xml_obj->type == XML_TEXT_NODE) ||
+           ((xml_obj->next != NULL) &&
+            (xml_obj->next->type == XML_TEXT_NODE) &&
+            (xml_obj->name == xml_obj->next->name)))); // libxml2 bug?
+}
 
-    if (xml_obj->doc == element->xml_obj->doc) {
-       return element;
-    } else {
-        new_child = xmlDocCopyNode(element->xml_obj, xml_obj->doc, 1);
-        if(new_child == NULL) {
-            return NULL;
-        }
-
-        // this is like this because we cannot just create XmlElement objects
-        // we have to have handles to attach them to
-        // the problem with this approach tho is that the object could be reclaimed
-        // what prevents v8 from garbage collecting it?
-        v8::Local<v8::Object> new_elem = XmlElement::New(new_child);
-        return Nan::ObjectWrap::Unwrap<XmlElement>(new_elem);
-    }
+bool
+XmlElement::prev_sibling_will_merge(xmlNode *child) {
+  return ((child->type == XML_TEXT_NODE) &&
+          ((xml_obj->type == XML_TEXT_NODE) ||
+           ((xml_obj->prev != NULL) &&
+            (xml_obj->prev->type == XML_TEXT_NODE) &&
+            (xml_obj->name == xml_obj->prev->name))));
 }
 
 void

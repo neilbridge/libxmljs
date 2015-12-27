@@ -18,6 +18,10 @@
 
 namespace libxmljs {
 
+// Static member initialization
+const int XmlDocument::DEFAULT_PARSING_OPTS = 0;
+const int XmlDocument::EXCLUDE_IMPLIED_ELEMENTS = HTML_PARSE_NOIMPLIED | HTML_PARSE_NODEFDTD;
+
 Nan::Persistent<v8::FunctionTemplate> XmlDocument::constructor_template;
 
 NAN_METHOD(XmlDocument::Encoding)
@@ -84,6 +88,7 @@ NAN_METHOD(XmlDocument::Root)
     XmlElement* element = Nan::ObjectWrap::Unwrap<XmlElement>(info[0]->ToObject());
     assert(element);
     xmlDocSetRootElement(document->xml_obj, element->xml_obj);
+    element->ref_wrapped_ancestor();
     return info.GetReturnValue().Set(info[0]);
 }
 
@@ -223,6 +228,8 @@ NAN_METHOD(XmlDocument::FromHtml)
         Nan::New<v8::String>("baseUrl").ToLocalChecked());
     v8::Local<v8::Value>  encodingOpt = options->Get(
         Nan::New<v8::String>("encoding").ToLocalChecked());
+    v8::Local<v8::Value> excludeImpliedElementsOpt = options->Get(
+        Nan::New<v8::String>("excludeImpliedElements").ToLocalChecked());
 
     // the base URL that will be used for this HTML parsed document
     v8::String::Utf8Value baseUrl_(baseUrlOpt->ToString());
@@ -242,17 +249,21 @@ NAN_METHOD(XmlDocument::FromHtml)
 
     XmlSyntaxErrorsSync errors; // RAII sentinel
 
+    const int parsingOptions = excludeImpliedElementsOpt->ToBoolean()->Value()
+        ? EXCLUDE_IMPLIED_ELEMENTS
+        : DEFAULT_PARSING_OPTS;
+
     htmlDocPtr doc;
     if (!node::Buffer::HasInstance(info[0])) {
         // Parse a string
         v8::String::Utf8Value str(info[0]->ToString());
-        doc = htmlReadMemory(*str, str.length(), baseUrl, encoding, 0);
+        doc = htmlReadMemory(*str, str.length(), baseUrl, encoding, parsingOptions);
     }
     else {
         // Parse a buffer
         v8::Local<v8::Object> buf = info[0]->ToObject();
         doc = htmlReadMemory(node::Buffer::Data(buf), node::Buffer::Length(buf),
-                            baseUrl, encoding, 0);
+                            baseUrl, encoding, parsingOptions);
     }
 
     if (!doc) {
@@ -271,6 +282,7 @@ NAN_METHOD(XmlDocument::FromHtml)
 }
 
 int getXmlParserOption2(v8::Local<v8::Object> props, const char *key, int value) {
+    Nan::HandleScope scope;
     v8::Local<v8::String> key2 = Nan::New<v8::String>(key).ToLocalChecked();
     v8::Local<v8::Boolean> val = props->Get(key2)->ToBoolean();
     return val->BooleanValue() ? value : 0;
@@ -477,24 +489,28 @@ NAN_METHOD(XmlDocument::RngValidate)
     XmlDocument* document = Nan::ObjectWrap::Unwrap<XmlDocument>(info.Holder());
     XmlDocument* documentSchema = Nan::ObjectWrap::Unwrap<XmlDocument>(info[0]->ToObject());
 
-	xmlRelaxNGParserCtxtPtr parser_ctxt = xmlRelaxNGNewDocParserCtxt(documentSchema->xml_obj);
+    xmlRelaxNGParserCtxtPtr parser_ctxt = xmlRelaxNGNewDocParserCtxt(documentSchema->xml_obj);
     if (parser_ctxt == NULL) {
         return Nan::ThrowError("Could not create context for RELAX NG schema parser");
     }
 
-	xmlRelaxNGPtr schema = xmlRelaxNGParse(parser_ctxt);
+    xmlRelaxNGPtr schema = xmlRelaxNGParse(parser_ctxt);
     if (schema == NULL) {
         return Nan::ThrowError("Invalid RELAX NG schema");
     }
 
-	xmlRelaxNGValidCtxtPtr valid_ctxt = xmlRelaxNGNewValidCtxt(schema);
+    xmlRelaxNGValidCtxtPtr valid_ctxt = xmlRelaxNGNewValidCtxt(schema);
     if (valid_ctxt == NULL) {
         return Nan::ThrowError("Unable to create a validation context for the RELAX NG schema");
     }
-	bool valid = xmlRelaxNGValidateDoc(valid_ctxt, document->xml_obj) == 0;
+    bool valid = xmlRelaxNGValidateDoc(valid_ctxt, document->xml_obj) == 0;
 
     xmlSetStructuredErrorFunc(NULL, NULL);
     info.Holder()->Set(Nan::New<v8::String>("validationErrors").ToLocalChecked(), errors.ToArray());
+
+    xmlRelaxNGFreeValidCtxt(valid_ctxt);
+    xmlRelaxNGFree(schema);
+    xmlRelaxNGFreeParserCtxt(parser_ctxt);
 
     return info.GetReturnValue().Set(Nan::New<v8::Boolean>(valid));
 }

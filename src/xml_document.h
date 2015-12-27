@@ -22,16 +22,17 @@ public:
     // setup the document handle bindings and internal constructor
     static void Initialize(v8::Handle<v8::Object> target);
 
-    // create a new document handle initalized with the
+    // create a new document handle initialized with the
     // given xmlDoc object, intended for use in c++ space
     static LIBXMLJS_API v8::Local<v8::Object> New(xmlDoc* doc);
 
-    void ref() {
-        Ref();
-    }
+    // publicly expose ref functions
+    using Nan::ObjectWrap::Ref;
+    using Nan::ObjectWrap::Unref;
 
-    void unref() {
-        Unref();
+    // expose ObjectWrap::refs_ (for testing)
+    int refs() {
+        return refs_;
     }
 
 protected:
@@ -54,7 +55,12 @@ protected:
     static NAN_METHOD(Errors);
     static NAN_METHOD(ToString);
     static NAN_METHOD(Validate);
-    static NAN_METHOD(RngValidate);	
+    static NAN_METHOD(RngValidate);
+
+
+    // Static member variables
+    static const int DEFAULT_PARSING_OPTS;
+    static const int EXCLUDE_IMPLIED_ELEMENTS;
 };
 
 }  // namespace libxmljs

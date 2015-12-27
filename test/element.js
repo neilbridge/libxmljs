@@ -198,11 +198,31 @@ module.exports.replace = function(assert) {
 
   doc = libxml.parseXml(str);
   bar = doc.get('bar');
-  enchant = libxml.parseXml('<enchanted/>');
+  var enchant = libxml.parseXml('<enchanted/>');
   bar.replace(enchant.root());
   assert.equal(doc.root().toString(), '<foo>some <enchanted/> evening</foo>')
   assert.equal(doc.root().childNodes().length, 3);
   assert.equal(doc.root().childNodes()[1].name(), 'enchanted');
 
   assert.done();
-}
+};
+
+module.exports.add_child_merge_text = function(assert) {
+  var str = "<foo>bar</foo>";
+  var doc = libxml.parseXml(str);
+  var foo = doc.root();
+  var baz = new libxml.Text(doc, "baz");
+  foo.addChild(baz);
+
+  // added text is merged into existing child node
+  assert.strictEqual("barbaz", foo.text());
+  assert.strictEqual(foo.childNodes().length, 1);
+  assert.ok(foo.childNodes()[0] != baz);
+
+  // passed node is not changed
+  assert.strictEqual(doc, baz.parent());
+  assert.strictEqual("baz", baz.text());
+
+  assert.done();
+};
+
