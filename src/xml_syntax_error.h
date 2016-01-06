@@ -10,7 +10,7 @@
 namespace libxmljs {
 
 // RAII sentinel to collect errors in synchroneous operations
-class XmlSyntaxErrorsSync {
+class LIBXMLJS_API XmlSyntaxErrorsSync {
 
 public:
 
@@ -34,7 +34,7 @@ private:
 
 };
 
-class XmlSyntaxErrorsStore {
+class LIBXMLJS_API XmlSyntaxErrorsStore {
 
 public:
 
@@ -60,7 +60,7 @@ private:
 };
 
 // RAII sentinel to collect errors in asynchroneous operation
-class XmlSyntaxErrorsAsync {
+class LIBXMLJS_API XmlSyntaxErrorsAsync {
 
 public:
 
