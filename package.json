@@ -9,8 +9,6 @@
   "description": "multi-threaded libxml bindings for v8 javascript engine",
   "version": "0.16.0",
   "scripts": {
-    "prepublish": "grep -v xmlversion.h vendor/libxml/.gitignore > vendor/libxml/.npmignore && cp vendor/libxml.conf/include/libxml/xmlversion.h vendor/libxml/include/libxml/",
-    "postpublish": "rm vendor/libxml/.npmignore vendor/libxml/include/libxml/xmlversion.h",
     "test": "node --expose_gc node_modules/nodeunit/bin/nodeunit test"
   },
   "repository": {
