@@ -331,3 +331,7 @@
 /* Define to the type of an unsigned integer type of width exactly 32 bits if
    such a type exists and the standard includes do not define it. */
 /* #undef uint32_t */
+
+#if defined(WIN32) && defined(_MSC_VER) && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
