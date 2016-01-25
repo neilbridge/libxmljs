@@ -466,7 +466,7 @@ FromXmlWorker::FromXmlWorker(Nan::Callback* callback,
     // Only ever parse a buffer
     data = node::Buffer::Data(buf);
     length = node::Buffer::Length(buf);
-    opts = getXmlParserOption(opt);
+    opts = getParserOptions(opt);
     SaveToPersistent("buf", buf);
     SaveToPersistent("opt", opt);
 }
