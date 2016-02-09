@@ -86,6 +86,7 @@ void* memMalloc(size_t size)
 
 void memFree(void* p)
 {
+    if (!p) return;
     memHdr* mem = client2hdr(p);
     ssize_t totalSize = mem->size + HDR_SIZE;
     adjustMem(-totalSize);
@@ -94,6 +95,7 @@ void memFree(void* p)
 
 void* memRealloc(void* ptr, size_t size)
 {
+    if (!ptr) return memMalloc(size);
     memHdr* mem1 = client2hdr(ptr);
     ssize_t oldSize = mem1->size;
     memHdr* mem2 = static_cast<memHdr*>(realloc(mem1, size + HDR_SIZE));
