@@ -1,7 +1,7 @@
 # Libxmljs-mt
 [![Build Status](https://secure.travis-ci.org/gagern/libxmljs.svg?branch=master)](http://travis-ci.org/gagern/libxmljs)
 
-This project is a fork of [libxmljs](https://github.com/polotek/libxmljs).
+This project is a fork of [libxmljs](https://github.com/libxmljs/libxmljs).
 The current version 0.17.2 is based on libxmljs 0.17.1 and libxml 2.9.4.
 
 Libxmljs was originally designed with single-threaded operations in mind.
@@ -10,7 +10,7 @@ But even more importantly, since the embedded [libxml](http://xmlsoft.org/)
 was configured only for single-threaded use, no other package
 could build on this to provide multi-threaded operations using libxml.
 The issue is discussed at length in upstream
-[issue 296](https://github.com/polotek/libxmljs/issues/296).
+[issue 296](https://github.com/libxmljs/libxmljs/issues/296).
 
 This package here adds multi-threading support to libxmljs.
 It does offer a method to asynchroneously parse an XML file using
@@ -75,12 +75,12 @@ console.log(child.attr('foo').value()); // prints "bar"
 
 ## Support
 
-* Docs - [http://github.com/polotek/libxmljs/wiki](http://github.com/polotek/libxmljs/wiki)
+* Docs - [http://github.com/libxmljs/libxmljs/wiki](http://github.com/libxmljs/libxmljs/wiki)
 * Mailing list - [http://groups.google.com/group/libxmljs](http://groups.google.com/group/libxmljs)
 
 ## API and Examples
 
-Check out the wiki [http://github.com/polotek/libxmljs/wiki](http://github.com/polotek/libxmljs/wiki).
+Check out the wiki [http://github.com/libxmljs/libxmljs/wiki](http://github.com/libxmljs/libxmljs/wiki).
 
 See the [examples](https://github.com/gagern/libxmljs/tree/master/examples) folder.
 
@@ -92,7 +92,7 @@ npm install libxmljs-mt
 
 ## Contribute
 
-Start by checking out the open issues both for [the upstream project](https://github.com/polotek/libxmljs/issues?state=open) and the [multi-threaded fork](https://github.com/gagern/libxmljs/issues?state=open). Specifically the [desired feature](https://github.com/polotek/libxmljs/issues?labels=desired+feature&page=1&state=open) ones.
+Start by checking out the open issues both for [the upstream project](https://github.com/libxmljs/libxmljs/issues?state=open) and the [multi-threaded fork](https://github.com/gagern/libxmljs/issues?state=open). Specifically the [desired feature](https://github.com/libxmljs/libxmljs/issues?labels=desired+feature&page=1&state=open) ones.
 
 ### Requirements
 
