@@ -16,6 +16,7 @@ npm-debug.log
 /vendor/libxml/python/
 /vendor/libxml/result/
 /vendor/libxml/test/
+/vendor/libxml/test*
 /vendor/libxml/vms/
 /vendor/libxml/VxWorks/
 /vendor/libxml/win32/
