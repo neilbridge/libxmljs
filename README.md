@@ -4,7 +4,7 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/64dea28o6yuaq7om/branch/master?svg=true)](https://ci.appveyor.com/project/gagern/libxmljs/branch/master)
 
 This project is a fork of [libxmljs](https://github.com/libxmljs/libxmljs).
-The current version 0.18.1 is based on libxmljs 0.18.7 and libxml 2.9.4.
+The current version 0.18.3 is based on libxmljs 0.18.7 and libxml 2.9.4.
 
 Libxmljs was originally designed with single-threaded operations in mind.
 There are no asynchroneous operations for things like parsing XML documents.
