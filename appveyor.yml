@@ -45,6 +45,8 @@ install:
   - npm config set -g strict-ssl=false
   - npm config set registry http://registry.npmjs.org/
 
+  - git submodule update --init --recursive
+
 build_script:
   - npm install --msvs_version=2015
 
