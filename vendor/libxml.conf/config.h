@@ -171,6 +171,11 @@
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
+/* snprintf macro for older MSVS versions */
+#if defined(_WIN32) && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
 
@@ -273,7 +278,7 @@
 /* #undef HAVE___VA_COPY */
 
 /* Define as const if the declaration of iconv() needs const. */
-#define ICONV_CONST 
+#define ICONV_CONST
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"

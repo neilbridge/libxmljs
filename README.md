@@ -1,8 +1,10 @@
 # Libxmljs-mt
 [![Build Status](https://secure.travis-ci.org/gagern/libxmljs.svg?branch=master)](http://travis-ci.org/gagern/libxmljs)
 
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/64dea28o6yuaq7om/branch/master?svg=true)](https://ci.appveyor.com/project/gagern/libxmljs/branch/master)
+
 This project is a fork of [libxmljs](https://github.com/libxmljs/libxmljs).
-The current version 0.18.0 is based on libxmljs 0.18.0 and libxml 2.9.4.
+The current version 0.18.1 is based on libxmljs 0.18.7 and libxml 2.9.4.
 
 Libxmljs was originally designed with single-threaded operations in mind.
 There are no asynchroneous operations for things like parsing XML documents.
@@ -97,4 +99,3 @@ Start by checking out the open issues both for [the upstream project](https://gi
 ### Requirements
 
 Make sure you have met the requirements for [node-gyp](https://github.com/TooTallNate/node-gyp#installation). You *do not* need to manually install node-gyp; it comes bundled with node.
-
