@@ -1,5 +1,5 @@
 {
-  "name": "libxmljs-mt",
+  "name": "node1-libxmljsmt",
   "author": "Marco Rogers",
   "contributors": [
     "Jeff Smick",
@@ -14,7 +14,7 @@
         "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
   },
   "description": "multi-threaded libxml bindings for v8 javascript engine",
-  "version": "0.20.0",
+  "version": "1.0.0",
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build --loglevel http",
     "test": "node --expose_gc ./node_modules/.bin/nodeunit test"
