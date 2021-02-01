@@ -352,7 +352,7 @@ XmlElement::get_attrs() {
 
   v8::Local<v8::Array> attributes = Nan::New<v8::Array>();
   v8::Local<v8::Function> push = v8::Local<v8::Function>::Cast(
-    attributes->Get(Nan::New<v8::String>("push").ToLocalChecked()));
+    attributes->Get(Nan::GetCurrentContext(), Nan::New<v8::String>("push").ToLocalChecked()).ToLocalChecked());
   v8::Local<v8::Value> argv[1];
   do {
       argv[0] = XmlAttribute::New(attr);

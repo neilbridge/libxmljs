@@ -46,7 +46,7 @@ NAN_METHOD(XmlText::New) {
   element->Wrap(info.Holder());
 
   // this prevents the document from going away
-  info.Holder()->Set(Nan::New<v8::String>("document").ToLocalChecked(), info[0]);
+  info.Holder()->Set(Nan::GetCurrentContext(), Nan::New<v8::String>("document").ToLocalChecked(), info[0]);
 
   return info.GetReturnValue().Set(info.Holder());
 }

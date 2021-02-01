@@ -178,6 +178,8 @@ NAN_METHOD(XmlDocument::ToString)
 
     int options = 0;
 
+    v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
+
     if (info.Length() > 0) {
     if (info[0]->IsBoolean()) {
        if (Nan::To<v8::Boolean>(info[0]).ToLocalChecked()->Value() == true) {
@@ -187,22 +189,22 @@ NAN_METHOD(XmlDocument::ToString)
         v8::Local<v8::Object> obj = Nan::To<v8::Object>(info[0]).ToLocalChecked();
 
         // drop the xml declaration
-        if (obj->Get(Nan::New<v8::String>("declaration").ToLocalChecked())->IsFalse()) {
+        if (obj->Get(context, Nan::New<v8::String>("declaration").ToLocalChecked()).ToLocalChecked()->IsFalse()) {
             options |= XML_SAVE_NO_DECL;
         }
 
         // format save output
-        if (obj->Get(Nan::New<v8::String>("format").ToLocalChecked())->IsTrue()) {
+        if (obj->Get(context, Nan::New<v8::String>("format").ToLocalChecked()).ToLocalChecked()->IsTrue()) {
             options |= XML_SAVE_FORMAT;
         }
 
         // no empty tags (only works with XML) ex: <title></title> becomes <title/>
-        if (obj->Get(Nan::New<v8::String>("selfCloseEmpty").ToLocalChecked())->IsFalse()) {
+        if (obj->Get(context, Nan::New<v8::String>("selfCloseEmpty").ToLocalChecked()).ToLocalChecked()->IsFalse()) {
             options |= XML_SAVE_NO_EMPTY;
         }
 
         // format with non-significant whitespace
-        if (obj->Get(Nan::New<v8::String>("whitespace").ToLocalChecked())->IsTrue()) {
+        if (obj->Get(context, Nan::New<v8::String>("whitespace").ToLocalChecked()).ToLocalChecked()->IsTrue()) {
             options |= XML_SAVE_WSNONSIG;
         }
 
@@ -408,10 +410,11 @@ NAN_METHOD(XmlDocument::FromXml)
     XmlSyntaxErrorsSync errors; // RAII sentinel
 
     v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-    v8::Local<v8::Value>  baseUrlOpt  = options->Get(
-        Nan::New<v8::String>("baseUrl").ToLocalChecked());
-    v8::Local<v8::Value>  encodingOpt = options->Get(
-        Nan::New<v8::String>("encoding").ToLocalChecked());
+    v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
+    v8::Local<v8::Value>  baseUrlOpt  = options->Get(context,
+        Nan::New<v8::String>("baseUrl").ToLocalChecked()).ToLocalChecked();
+    v8::Local<v8::Value>  encodingOpt = options->Get(context,
+        Nan::New<v8::String>("encoding").ToLocalChecked()).ToLocalChecked();
 
     // the base URL that will be used for this document
    Nan::Utf8String baseUrl_(Nan::To<v8::String>(baseUrlOpt).ToLocalChecked());
@@ -574,7 +577,8 @@ NAN_METHOD(XmlDocument::Validate)
     bool valid = xmlSchemaValidateDoc(valid_ctxt, document->xml_obj) == 0;
 
     xmlSetStructuredErrorFunc(NULL, NULL);
-    info.Holder()->Set(Nan::New<v8::String>("validationErrors").ToLocalChecked(), errors.ToArray());
+    v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
+    info.Holder()->Set(context, Nan::New<v8::String>("validationErrors").ToLocalChecked(), errors.ToArray());
 
     xmlSchemaFreeValidCtxt(valid_ctxt);
     xmlSchemaFree(schema);
@@ -609,7 +613,8 @@ NAN_METHOD(XmlDocument::RngValidate)
     bool valid = xmlRelaxNGValidateDoc(valid_ctxt, document->xml_obj) == 0;
 
     xmlSetStructuredErrorFunc(NULL, NULL);
-    info.Holder()->Set(Nan::New<v8::String>("validationErrors").ToLocalChecked(), errors.ToArray());
+    v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
+    info.Holder()->Set(context, Nan::New<v8::String>("validationErrors").ToLocalChecked(), errors.ToArray());
 
     xmlRelaxNGFreeValidCtxt(valid_ctxt);
     xmlRelaxNGFree(schema);

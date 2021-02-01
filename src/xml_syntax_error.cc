@@ -65,7 +65,7 @@ void
 XmlSyntaxErrorsSync::ErrorFunc(void* errs, xmlError* error) {
     Nan::HandleScope scope;
     XmlSyntaxErrorsSync* self = static_cast<XmlSyntaxErrorsSync*>(errs);
-    self->errors->Set(self->errors->Length(), BuildSyntaxError(error));
+    self->errors->Set(Nan::GetCurrentContext(), self->errors->Length(), BuildSyntaxError(error));
 }
 
 XmlSyntaxErrorsStore::~XmlSyntaxErrorsStore() {
@@ -79,7 +79,7 @@ XmlSyntaxErrorsStore::ToArray() {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Array> array = Nan::New<v8::Array>(errors.size());
     for (uint32_t i = 0; i != errors.size(); ++i)
-        array->Set(i, XmlSyntaxErrorsSync::BuildSyntaxError(errors[i]));
+        array->Set(Nan::GetCurrentContext(), i, XmlSyntaxErrorsSync::BuildSyntaxError(errors[i]));
     return scope.Escape(array);
 }
 
