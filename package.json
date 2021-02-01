@@ -1,5 +1,6 @@
 {
   "name": "node1-libxmljsmt-myh",
+  "version": "1.0.4",
   "author": "Meng-Yuan Huang <myh@live.com>",
   "contributors": [
     "Marco Rogers",
@@ -15,7 +16,6 @@
         "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
   },
   "description": "multi-threaded libxml bindings for v8 javascript engine",
-  "version": "1.0.3",
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build --loglevel http",
     "test": "node --expose_gc ./node_modules/.bin/nodeunit test"
