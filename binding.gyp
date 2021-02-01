@@ -83,6 +83,7 @@
         ['OS=="win"', {
           'defines': [
             'HAVE_WIN32_THREADS',
+            'BUILDING_NODE_EXTENSION',
           ],
         }, {
           'defines': [
