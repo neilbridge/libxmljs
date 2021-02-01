@@ -1,7 +1,7 @@
 {
   'targets': [
     {
-      'target_name': 'xmljs',
+      'target_name': 'xmljs-myh',
       'product_extension': 'node',
       'type': 'shared_library',
       'include_dirs': [
