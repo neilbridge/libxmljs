@@ -1,6 +1,6 @@
 {
   "name": "node1-libxmljsmt-myh",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": "Meng-Yuan Huang <myh@live.com>",
   "contributors": [
     "Marco Rogers",
@@ -9,11 +9,11 @@
     "Martin von Gagern <Martin.vGagern@gmx.net>"
   ],
   "binary": {
-        "module_name" : "xmljs-myh",
-        "module_path" : "./build/Release/",
-        "host"        : "https://github.com",
-        "remote_path" : "./MrMYHuang/libxmljs/releases/download/v{version}-mt/",
-        "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+    "module_name": "xmljs-myh",
+    "module_path": "./build/Release/",
+    "host": "https://github.com",
+    "remote_path": "./MrMYHuang/libxmljs/releases/download/v{version}-mt/",
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
   },
   "description": "multi-threaded libxml bindings for v8 javascript engine",
   "scripts": {
@@ -33,9 +33,9 @@
     "node": ">=0.8.0"
   },
   "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.5",
     "bindings": "^1.3.0",
-    "nan": "~2.14.0",
-    "node-pre-gyp": "^0.9.1"
+    "nan": "~2.14.0"
   },
   "devDependencies": {
     "nodeunit": "^0.11.2",
