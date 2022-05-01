@@ -1,6 +1,6 @@
 {
   "name": "node1-libxmljsmt-myh",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "author": "Meng-Yuan Huang <myh@live.com>",
   "contributors": [
     "Marco Rogers",
@@ -35,7 +35,7 @@
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5",
     "bindings": "^1.3.0",
-    "nan": "~2.14.0"
+    "nan": "~2.15.0"
   },
   "devDependencies": {
     "nodeunit": "^0.11.2",
